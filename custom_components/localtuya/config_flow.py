@@ -393,7 +393,7 @@ class LocalTuyaOptionsFlowHandler(config_entries.OptionsFlow):
 
     def __init__(self, config_entry):
         """Initialize localtuya options flow."""
-        self.config_entry = config_entry
+        self._config_entry = config_entry
         # self.dps_strings = config_entry.data.get(CONF_DPS_STRINGS, gen_dps_strings())
         # self.entities = config_entry.data[CONF_ENTITIES]
         self.selected_device = None
@@ -431,7 +431,7 @@ class LocalTuyaOptionsFlowHandler(config_entries.OptionsFlow):
                 for i in [CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_USER_ID]:
                     new_data[i] = ""
                 self.hass.config_entries.async_update_entry(
-                    self.config_entry,
+                    self._config_entry,
                     data=new_data,
                 )
                 return self.async_create_entry(
@@ -441,7 +441,7 @@ class LocalTuyaOptionsFlowHandler(config_entries.OptionsFlow):
             cloud_api, res = await attempt_cloud_connection(self.hass, user_input)
 
             if not res:
-                new_data = self.config_entry.data.copy()
+                new_data = self._config_entry.data.copy()
                 new_data.update(user_input)
                 cloud_devs = cloud_api.device_list
                 for dev_id, dev in new_data[CONF_DEVICES].items():
@@ -451,7 +451,7 @@ class LocalTuyaOptionsFlowHandler(config_entries.OptionsFlow):
                 new_data[ATTR_UPDATED_AT] = str(int(time.time() * 1000))
 
                 self.hass.config_entries.async_update_entry(
-                    self.config_entry,
+                    self._config_entry,
                     data=new_data,
                 )
                 return self.async_create_entry(
@@ -460,7 +460,7 @@ class LocalTuyaOptionsFlowHandler(config_entries.OptionsFlow):
             errors["base"] = res["reason"]
             placeholders = {"msg": res["msg"]}
 
-        defaults = self.config_entry.data.copy()
+        defaults = self._config_entry.data.copy()
         defaults.update(user_input or {})
         defaults[CONF_NO_CLOUD] = False
 
@@ -503,7 +503,7 @@ class LocalTuyaOptionsFlowHandler(config_entries.OptionsFlow):
         devices = {
             dev_id: dev["ip"]
             for dev_id, dev in self.discovered_devices.items()
-            if dev["gwId"] not in self.config_entry.data[CONF_DEVICES]
+            if dev["gwId"] not in self._config_entry.data[CONF_DEVICES]
         }
 
         return self.async_show_form(
@@ -521,14 +521,14 @@ class LocalTuyaOptionsFlowHandler(config_entries.OptionsFlow):
         errors = {}
         if user_input is not None:
             self.selected_device = user_input[SELECTED_DEVICE]
-            dev_conf = self.config_entry.data[CONF_DEVICES][self.selected_device]
+            dev_conf = self._config_entry.data[CONF_DEVICES][self.selected_device]
             self.dps_strings = dev_conf.get(CONF_DPS_STRINGS, gen_dps_strings())
             self.entities = dev_conf[CONF_ENTITIES]
 
             return await self.async_step_configure_device()
 
         devices = {}
-        for dev_id, configured_dev in self.config_entry.data[CONF_DEVICES].items():
+        for dev_id, configured_dev in self._config_entry.data[CONF_DEVICES].items():
             devices[dev_id] = configured_dev[CONF_HOST]
 
         return self.async_show_form(
@@ -584,7 +584,7 @@ class LocalTuyaOptionsFlowHandler(config_entries.OptionsFlow):
                             int(entity.split(":")[0])
                             for entity in user_input[CONF_ENTITIES]
                         ]
-                        device_config = self.config_entry.data[CONF_DEVICES][dev_id]
+                        device_config = self._config_entry.data[CONF_DEVICES][dev_id]
                         self.entities = [
                             entity
                             for entity in device_config[CONF_ENTITIES]
@@ -607,7 +607,7 @@ class LocalTuyaOptionsFlowHandler(config_entries.OptionsFlow):
         defaults = {}
         if self.editing_device:
             # If selected device exists as a config entry, load config from it
-            defaults = self.config_entry.data[CONF_DEVICES][dev_id].copy()
+            defaults = self._config_entry.data[CONF_DEVICES][dev_id].copy()
             cloud_devs = self.hass.data[DOMAIN][DATA_CLOUD].device_list
             placeholders = {"for_device": f" for device `{dev_id}`"}
             if dev_id in cloud_devs:
@@ -662,12 +662,12 @@ class LocalTuyaOptionsFlowHandler(config_entries.OptionsFlow):
 
                 dev_id = self.device_data.get(CONF_DEVICE_ID)
 
-                new_data = self.config_entry.data.copy()
+                new_data = self._config_entry.data.copy()
                 new_data[ATTR_UPDATED_AT] = str(int(time.time() * 1000))
                 new_data[CONF_DEVICES].update({dev_id: config})
 
                 self.hass.config_entries.async_update_entry(
-                    self.config_entry,
+                    self._config_entry,
                     data=new_data,
                 )
                 return self.async_create_entry(title="", data={})
@@ -740,8 +740,8 @@ class LocalTuyaOptionsFlowHandler(config_entries.OptionsFlow):
                 if len(self.entities) == len(self.device_data[CONF_ENTITIES]):
                     # finished editing device. Let's store the new config entry....
                     dev_id = self.device_data[CONF_DEVICE_ID]
-                    new_data = self.config_entry.data.copy()
-                    entry_id = self.config_entry.entry_id
+                    new_data = self._config_entry.data.copy()
+                    entry_id = self._config_entry.entry_id
                     # removing entities from registry (they will be recreated)
                     ent_reg = er.async_get(self.hass)
                     reg_entities = {
@@ -755,7 +755,7 @@ class LocalTuyaOptionsFlowHandler(config_entries.OptionsFlow):
                     new_data[CONF_DEVICES][dev_id] = self.device_data
                     new_data[ATTR_UPDATED_AT] = str(int(time.time() * 1000))
                     self.hass.config_entries.async_update_entry(
-                        self.config_entry,
+                        self._config_entry,
                         data=new_data,
                     )
                     return self.async_create_entry(title="", data={})
